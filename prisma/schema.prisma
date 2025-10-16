@@ -1,0 +1,53 @@
+// Prisma schema for MySQL
+// Run: npx prisma generate ; npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  items     Item[]
+  outfits   Outfit[]
+}
+
+model Item {
+  id        String   @id @default(cuid())
+  category  String
+  name      String
+  brand     String
+  style     String
+  color     String
+  imageUrl  String   @db.LongText
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  outfitItems OutfitItem[]
+}
+
+model Outfit {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  items     OutfitItem[]
+}
+
+model OutfitItem {
+  outfit   Outfit @relation(fields: [outfitId], references: [id])
+  outfitId String
+  item     Item   @relation(fields: [itemId], references: [id])
+  itemId   String
+
+  @@id([outfitId, itemId])
+}

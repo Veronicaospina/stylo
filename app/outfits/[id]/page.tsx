@@ -1,18 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { use, useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getOutfitById } from "@/lib/storage"
 import type { Outfit } from "@/lib/types"
 
-export default function OutfitDetailPage({ params }: { params: { id: string } }) {
+export default function OutfitDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const [outfit, setOutfit] = useState<Outfit | null>(null)
+  const { id } = use(params)
 
   useEffect(() => {
-    const foundOutfit = getOutfitById(params.id)
-    setOutfit(foundOutfit || null)
-  }, [params.id])
+    ;(async () => {
+      const foundOutfit = await getOutfitById(id)
+      setOutfit(foundOutfit || null)
+    })()
+  }, [id])
 
   if (!outfit) {
     return (

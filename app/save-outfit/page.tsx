@@ -21,7 +21,7 @@ export default function SaveOutfitPage() {
     }
   }, [])
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!outfitName.trim()) {
       alert("Please enter an outfit name")
       return
@@ -32,7 +32,7 @@ export default function SaveOutfitPage() {
       return
     }
 
-    addOutfit({
+    await addOutfit({
       name: outfitName,
       items: selectedItems,
     })

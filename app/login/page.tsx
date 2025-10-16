@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [name, setName] = useState("")
   const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
@@ -27,10 +27,10 @@ export default function LoginPage() {
           setError("Please enter your name")
           return
         }
-        signup(email, password, name)
+        await signup(email, password, name)
         router.push("/home")
       } else {
-        const user = login(email, password)
+        const user = await login(email, password)
         if (user) {
           router.push("/home")
         } else {

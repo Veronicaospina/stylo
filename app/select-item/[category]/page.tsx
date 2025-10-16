@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -16,9 +16,9 @@ const categoryNames: Record<ClothingCategory, string> = {
   accessories: "Accessories",
 }
 
-export default function SelectItemPage({ params }: { params: { category: string } }) {
+export default function SelectItemPage({ params }: { params: Promise<{ category: string }> }) {
   const router = useRouter()
-  const category = params.category as ClothingCategory
+  const { category } = use(params) as { category: ClothingCategory }
   const [selectedItems, setSelectedItems] = useState<string[]>([])
 
   useEffect(() => {

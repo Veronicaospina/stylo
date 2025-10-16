@@ -3,10 +3,9 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { getItemsByCategory } from "@/lib/storage"
+import { getItemsByCategory, deleteItem } from "@/lib/storage"
 import type { ClothingCategory, ClothingItem } from "@/lib/types"
 import { X } from "lucide-react"
-import { deleteItem } from "@/lib/storage"
 
 interface CategoryGridProps {
   category: ClothingCategory
@@ -18,19 +17,19 @@ export function CategoryGrid({ category, onItemClick, selectedItems = [] }: Cate
   const [items, setItems] = useState<ClothingItem[]>([])
 
   useEffect(() => {
-    loadItems()
+    void loadItems()
   }, [category])
 
-  const loadItems = () => {
-    const categoryItems = getItemsByCategory(category)
+  const loadItems = async () => {
+    const categoryItems = await getItemsByCategory(category)
     setItems(categoryItems)
   }
 
-  const handleDelete = (e: React.MouseEvent, itemId: string) => {
+  const handleDelete = async (e: React.MouseEvent, itemId: string) => {
     e.stopPropagation()
     if (confirm("Are you sure you want to delete this item?")) {
-      deleteItem(itemId)
-      loadItems()
+      await deleteItem(itemId)
+      await loadItems()
     }
   }
 

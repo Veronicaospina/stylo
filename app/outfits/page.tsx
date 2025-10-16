@@ -11,17 +11,18 @@ export default function OutfitsPage() {
   const [outfits, setOutfits] = useState<Outfit[]>([])
 
   useEffect(() => {
-    loadOutfits()
+    void loadOutfits()
   }, [])
 
-  const loadOutfits = () => {
-    setOutfits(getOutfits())
+  const loadOutfits = async () => {
+    const data = await getOutfits()
+    setOutfits(data)
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this outfit?")) {
-      deleteOutfit(id)
-      loadOutfits()
+      await deleteOutfit(id)
+      await loadOutfits()
     }
   }
 

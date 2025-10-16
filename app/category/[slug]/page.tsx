@@ -12,8 +12,9 @@ const categoryNames: Record<ClothingCategory, string> = {
   accessories: "Accessories",
 }
 
-export default function CategoryPage({ params }: { params: { slug: string } }) {
-  const category = params.slug as ClothingCategory
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const category = slug as ClothingCategory
 
   return (
     <div className="relative min-h-screen overflow-hidden">

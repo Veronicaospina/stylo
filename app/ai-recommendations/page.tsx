@@ -27,7 +27,10 @@ export default function AIRecommendationsPage() {
   const [recommendedItemsDetails, setRecommendedItemsDetails] = useState<ClothingItem[]>([])
 
   useEffect(() => {
-    setItems(getItems())
+    ;(async () => {
+      const data = await getItems()
+      setItems(data)
+    })()
   }, [])
 
   const handleGetRecommendation = async () => {

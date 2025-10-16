@@ -4,42 +4,31 @@ export interface User {
   name: string
 }
 
-export function login(email: string, password: string): User | null {
-  // Simple authentication using localStorage
-  const users = JSON.parse(localStorage.getItem("users") || "[]")
-  const user = users.find((u: User & { password: string }) => u.email === email && u.password === password)
-
-  if (user) {
-    const { password, ...userWithoutPassword } = user
-    localStorage.setItem("currentUser", JSON.stringify(userWithoutPassword))
-    return userWithoutPassword
-  }
-
-  return null
+export async function login(email: string, password: string): Promise<User | null> {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  })
+  if (!res.ok) return null
+  const user = (await res.json()) as User
+  localStorage.setItem("currentUser", JSON.stringify(user))
+  return user
 }
 
-export function signup(email: string, password: string, name: string): User {
-  const users = JSON.parse(localStorage.getItem("users") || "[]")
-
-  // Check if user already exists
-  if (users.some((u: User) => u.email === email)) {
-    throw new Error("User already exists")
+export async function signup(email: string, password: string, name: string): Promise<User> {
+  const res = await fetch("/api/auth/signup", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, name }),
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error || "Signup failed")
   }
-
-  const newUser = {
-    id: Date.now().toString(),
-    email,
-    password,
-    name,
-  }
-
-  users.push(newUser)
-  localStorage.setItem("users", JSON.stringify(users))
-
-  const { password: _, ...userWithoutPassword } = newUser
-  localStorage.setItem("currentUser", JSON.stringify(userWithoutPassword))
-
-  return userWithoutPassword
+  const user = (await res.json()) as User
+  localStorage.setItem("currentUser", JSON.stringify(user))
+  return user
 }
 
 export function logout() {
@@ -47,8 +36,8 @@ export function logout() {
 }
 
 export function getCurrentUser(): User | null {
-  const userStr = localStorage.getItem("currentUser")
-  return userStr ? JSON.parse(userStr) : null
+  const userStr = typeof window !== "undefined" ? localStorage.getItem("currentUser") : null
+  return userStr ? (JSON.parse(userStr) as User) : null
 }
 
 export function isAuthenticated(): boolean {

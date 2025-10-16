@@ -34,13 +34,13 @@ export default function AddItemPage() {
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!category || !name || !imagePreview) {
       alert("Please fill in category, name, and attach an image")
       return
     }
 
-    addItem({
+    await addItem({
       category: category as ClothingCategory,
       name,
       brand,

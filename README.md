@@ -38,14 +38,19 @@ Aplicación web para gestionar tu armario, crear y guardar outfits, obtener reco
 pnpm install
 ```
 
-2) Variables de entorno
-- Copia `.env.example` a `.env` y completa tu cadena de conexión:
+2) Variables de entorno (.env)
+Como los archivos `.env` y `.env.example` suelen estar ignorados por Git, crea manualmente un archivo `.env` en la raíz del proyecto con el siguiente contenido mínimo:
+
 ```env
+# Conexión a MySQL para Prisma
 DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
 ```
-Ejemplos locales:
-- Sin contraseña (según tu MySQL): `mysql://root@localhost:3306/stylo`
-- Con contraseña: `mysql://root:mi_password@localhost:3306/stylo`
+
+Ejemplos locales de `DATABASE_URL`:
+- Sin contraseña (según tu configuración):
+  - `mysql://root@localhost:3306/stylo`
+- Con contraseña:
+  - `mysql://root:mi_password@localhost:3306/stylo`
 
 3) Base de datos
 - Opción Docker (Windows con Docker Desktop):

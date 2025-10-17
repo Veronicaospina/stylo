@@ -10,8 +10,8 @@ export async function GET(req: Request) {
   try {
     const userId = getUserId(req)
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const prisma = await getPrisma()
-  const items = await prisma.item.findMany({ where: { userId }, orderBy: { createdAt: "desc" } })
+  const prismaClient = await getPrisma()
+  const items = await prismaClient.item.findMany({ where: { userId }, orderBy: { createdAt: "desc" } })
     return NextResponse.json(items)
   } catch (e) {
     console.error(e)
@@ -24,10 +24,10 @@ export async function POST(req: Request) {
     const userId = getUserId(req)
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const data = await req.json()
-  const prisma = await getPrisma()
-  const user = await prisma.user.findUnique({ where: { id: userId } })
+  const prismaClient = await getPrisma()
+  const user = await prismaClient.user.findUnique({ where: { id: userId } })
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const item = await prisma.item.create({ data: { ...data, userId } })
+  const item = await prismaClient.item.create({ data: { ...data, userId } })
     return NextResponse.json(item)
   } catch (e) {
     console.error(e)
@@ -40,8 +40,8 @@ export async function DELETE(req: Request) {
     const userId = getUserId(req)
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const { id } = await req.json()
-  const prisma = await getPrisma()
-  await prisma.item.delete({ where: { id } })
+  const prismaClient = await getPrisma()
+  await prismaClient.item.delete({ where: { id } })
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error(e)

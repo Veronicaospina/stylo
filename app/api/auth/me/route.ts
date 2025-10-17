@@ -5,8 +5,8 @@ export async function GET(req: Request) {
   try {
     const userId = req.headers.get("x-user-id")
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const prisma = await getPrisma()
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+  const prismaClient = await getPrisma()
+  const user = await prismaClient.user.findUnique({ where: { id: userId } })
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     return NextResponse.json({ id: user.id, email: user.email, name: user.name })
   } catch (e) {

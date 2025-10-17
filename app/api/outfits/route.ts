@@ -9,8 +9,8 @@ export async function GET(req: Request) {
   try {
     const userId = getUserId(req)
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  const prisma = await getPrisma()
-  const outfits = await prisma.outfit.findMany({
+  const prismaClient = await getPrisma()
+  const outfits = await prismaClient.outfit.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
       select: { id: true, name: true, createdAt: true },
@@ -30,8 +30,8 @@ export async function POST(req: Request) {
     if (!name || !Array.isArray(itemIds) || itemIds.length === 0) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
     }
-  const prisma = await getPrisma()
-  const outfit = await prisma.outfit.create({
+  const prismaClient = await getPrisma()
+  const outfit = await prismaClient.outfit.create({
       data: {
         name,
         userId,

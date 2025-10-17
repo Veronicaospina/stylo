@@ -7,8 +7,8 @@ export async function POST(req: Request) {
     const { email, password } = await req.json()
     if (!email || !password) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
 
-  const prisma = await getPrisma()
-  const user = await prisma.user.findUnique({ where: { email } })
+  const prismaClient = await getPrisma()
+  const user = await prismaClient.user.findUnique({ where: { email } })
     if (!user) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
 
     const ok = await bcrypt.compare(password, user.password)

@@ -21,7 +21,10 @@ export default function OutfitsPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this outfit?")) {
-      await deleteOutfit(id)
+      const ok = await deleteOutfit(id)
+      if (!ok) {
+        alert("Failed to delete outfit. Please make sure you're logged in.")
+      }
       await loadOutfits()
     }
   }

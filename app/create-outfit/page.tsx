@@ -20,7 +20,14 @@ export default function CreateOutfitPage() {
   const [selectedItems, setSelectedItems] = useState<ClothingItem[]>([])
 
   const handleClearOutfit = () => {
+    // Clear UI state and the temporary selection stored during the flow
     setSelectedItems([])
+    try {
+      sessionStorage.removeItem("outfit-items")
+      // Opcional: aviso sencillo
+      // eslint-disable-next-line no-alert
+      // alert("Outfit cleared")
+    } catch {}
   }
 
   const handleDressMe = () => {

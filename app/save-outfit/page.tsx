@@ -81,12 +81,27 @@ export default function SaveOutfitPage() {
               <Label className="text-base font-medium">Selected Items:</Label>
               <div className="grid grid-cols-3 gap-2">
                 {selectedItems.map((item) => (
-                  <div key={item.id} className="aspect-square rounded-lg overflow-hidden border-2 border-gray-300">
+                  <div key={item.id} className="group relative aspect-square rounded-lg overflow-hidden border-2 border-gray-300">
                     <img
                       src={item.imageUrl || "/placeholder.svg"}
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-end">
+                      <div className="w-full p-2 text-white text-[11px] sm:text-xs space-y-1">
+                        <div className="font-semibold truncate">{item.name}</div>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                          <span className="text-white/80">Type:</span>
+                          <span className="truncate capitalize">{item.category}</span>
+                          <span className="text-white/80">Brand:</span>
+                          <span className="truncate">{item.brand || "—"}</span>
+                          <span className="text-white/80">Style:</span>
+                          <span className="truncate">{item.style || "—"}</span>
+                          <span className="text-white/80">Color:</span>
+                          <span className="truncate">{item.color || "—"}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

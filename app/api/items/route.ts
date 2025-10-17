@@ -23,6 +23,8 @@ export async function POST(req: Request) {
     const userId = getUserId(req)
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const data = await req.json()
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     const item = await prisma.item.create({ data: { ...data, userId } })
     return NextResponse.json(item)
   } catch (e) {

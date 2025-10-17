@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addItem } from "@/lib/storage"
+import { getCurrentUser } from "@/lib/auth"
+import { AuthGuard } from "@/components/auth-guard"
 import type { ClothingCategory } from "@/lib/types"
 
 export default function AddItemPage() {
@@ -22,15 +24,30 @@ export default function AddItemPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>("")
 
+  async function compressImageToDataUrl(file: File, maxSize = 1024, quality = 0.8): Promise<string> {
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height))
+    const targetW = Math.max(1, Math.round(bitmap.width * scale))
+    const targetH = Math.max(1, Math.round(bitmap.height * scale))
+    const canvas = document.createElement("canvas")
+    canvas.width = targetW
+    canvas.height = targetH
+    const ctx = canvas.getContext("2d")!
+    ctx.drawImage(bitmap, 0, 0, targetW, targetH)
+    // Use JPEG to significantly reduce size
+    return canvas.toDataURL("image/jpeg", quality)
+  }
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setImageFile(file)
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string)
-      }
-      reader.readAsDataURL(file)
+      // Compress to reduce payload size for API route
+      compressImageToDataUrl(file).then(setImagePreview).catch(() => {
+        const reader = new FileReader()
+        reader.onloadend = () => setImagePreview(reader.result as string)
+        reader.readAsDataURL(file)
+      })
     }
   }
 
@@ -40,7 +57,13 @@ export default function AddItemPage() {
       return
     }
 
-    await addItem({
+    const user = getCurrentUser()
+    if (!user) {
+      alert("Please log in to save items")
+      return
+    }
+
+    const created = await addItem({
       category: category as ClothingCategory,
       name,
       brand,
@@ -48,12 +71,16 @@ export default function AddItemPage() {
       color,
       imageUrl: imagePreview,
     })
-
+    if (!created) {
+      alert("Failed to save item. Please ensure you are logged in.")
+      return
+    }
     router.push("/home")
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <AuthGuard>
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
       <div
         className="absolute inset-0 bg-cover bg-center"
@@ -92,9 +119,6 @@ export default function AddItemPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" className="mt-8 bg-transparent">
-              Verify
-            </Button>
           </div>
 
           <div className="text-center">
@@ -181,6 +205,7 @@ export default function AddItemPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </AuthGuard>
   )
 }

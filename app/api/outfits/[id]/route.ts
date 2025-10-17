@@ -25,6 +25,12 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
   try {
     const userId = getUserId(req)
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    // Ensure the outfit belongs to the user
+    const existing = await prisma.outfit.findFirst({ where: { id: params.id, userId }, select: { id: true } })
+    if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
+
+    // Remove junction rows before deleting outfit to avoid FK constraint issues
+    await prisma.outfitItem.deleteMany({ where: { outfitId: params.id } })
     await prisma.outfit.delete({ where: { id: params.id } })
     return NextResponse.json({ ok: true })
   } catch (e) {

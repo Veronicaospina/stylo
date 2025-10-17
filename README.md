@@ -117,7 +117,4 @@ La app quedará disponible (por defecto) en http://localhost:3000.
 3. `pnpm build` y `pnpm start` (o usa tu plataforma preferida).
 
 
-## Próximos pasos recomendados
-- Integrar Auth.js para sesiones seguras (cookies/JWT) y eliminar el uso de `x-user-id` del cliente.
-- Mover imágenes a un storage externo y servirlas optimizadas.
-- Añadir tests de unidad e integración para rutas API.
+

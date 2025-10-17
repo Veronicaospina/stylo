@@ -6,8 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+  provider = "postgresql"
+  // Use PRISMA_DATABASE_URL for Prisma Data Platform / Vercel integration.
+  // Falls back to DATABASE_URL in environments that only provide that variable.
+  url = env("PRISMA_DATABASE_URL")
 }
 
 model User {
@@ -27,7 +29,7 @@ model Item {
   brand     String
   style     String
   color     String
-  imageUrl  String   @db.LongText
+  imageUrl  String   @db.Text
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
   userId    String

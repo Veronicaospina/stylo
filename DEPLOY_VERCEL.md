@@ -24,3 +24,17 @@ Pasos recomendados para desplegar este proyecto en Vercel:
    - Después de configurar las variables, entra al proyecto en Vercel y presiona "Deploy" o empuja un nuevo commit a la rama vinculada.
 
 Si quieres, puedo hacer un pull-request o un commit adicional con más ajustes (por ejemplo, `vercel.json` con rewrites/redirections) o revisar el contenido de la migración SQL antes del despliegue.
+
+---
+
+## Resumen de la migración (schema)
+
+La migración generada crea las siguientes tablas y relaciones principales:
+
+- `User` (id, email, name, password, createdAt) — email único.
+- `Item` (id, category, name, brand, style, color, imageUrl, createdAt, userId) — FK -> User(id).
+- `Outfit` (id, name, createdAt, userId) — FK -> User(id).
+- `OutfitItem` (outfitId, itemId) — PK compuesta (outfitId, itemId), FKs -> Outfit(id), Item(id).
+
+Recomendación: revisa `prisma/migrations/20251017094559_init/migration.sql` antes de importar datos.
+

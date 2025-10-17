@@ -4,18 +4,20 @@ Aplicación web para gestionar tu armario, crear y guardar outfits, obtener reco
 
 
 ## Tecnologías clave
+## Tecnologías clave
 - Framework: Next.js 15 (App Router) + TypeScript
 - UI: Tailwind CSS 4 + shadcn/ui (Radix)
 - Estado/cliente: React 19
 - Back-end/API: Rutas del App Router (route handlers)
-- Base de datos: MySQL 8 con Prisma ORM
+- Base de datos: PostgreSQL con Prisma ORM (migrado desde MySQL)
 - Autenticación (demo): email/contraseña (hash con bcrypt). El cliente mantiene `{ id, email, name }` en `localStorage` y las peticiones al API envían `x-user-id`. Nota: esto es solo para demo; para producción se recomienda Auth.js (cookies/JWT) u otro sistema seguro.
-- Imágenes: almacenadas como Data URL (base64) en DB (campo `LongText`). En el alta se comprimen en el cliente.
+- Imágenes: almacenadas como Data URL (base64) en DB (campo `Text`). En el alta se comprimen en el cliente.
 
 
-## Estructura del proyecto (resumen)
-- `app/` — Páginas (App Router) y API routes
-  - `add-item/` — Alta de prendas
+## Requisitos previos
+- Node.js >= 18.17 (recomendado 20+)
+- PNPM (o instala con `npm i -g pnpm`)
+- PostgreSQL (local, Docker o gestionado)
   - `create-outfit/` — Flujo para crear outfit
   - `save-outfit/` — Guardar outfit (desde selección o IA)
   - `outfits/` — Listado y detalle de outfits guardados
@@ -25,25 +27,63 @@ Aplicación web para gestionar tu armario, crear y guardar outfits, obtener reco
 - `lib/` — Utilidades (Prisma client, tipos, almacenamiento cliente/servidor)
 - `prisma/` — Esquema de Prisma y migraciones
 
-
 ## Requisitos previos
-- Node.js >= 18.17 (recomendado 20+)
 - PNPM (o instala con `npm i -g pnpm`)
+2) Variables de entorno (.env)
+El proyecto usa ahora PostgreSQL y soporta el flujo de Prisma Data Platform. Crea un archivo `.env` en la raíz con al menos estas variables (no subas credenciales reales al repo):
+
+```env
+# Conexión a Postgres (forma estándar)
+POSTGRES_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+
+# Variable usada por Prisma en este proyecto / en Vercel
+PRISMA_DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+```
+
+Notas:
+- En Vercel debes añadir `PRISMA_DATABASE_URL` (y `POSTGRES_URL` si la necesitas) en las Environment Variables del proyecto.
+- `PRISMA_DATABASE_URL` es la variable que utiliza `prisma` en `prisma/schema.prisma`.
 - MySQL 8 (local, Docker o gestionado)
 
 
 ## Configuración
 1) Clonar e instalar dependencias
 ```powershell
+4) Prisma: generar cliente y aplicar migraciones
+
+Local (desarrollo):
+```powershell
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+Producción / despliegue:
+- En producción usa `npx prisma migrate deploy` para aplicar migraciones sin interacción.
+- En Vercel el proyecto ya incluye un `postinstall` que ejecuta `prisma generate` automáticamente durante `pnpm install`, y el script `build` ejecuta `prisma generate && next build`. Si ves errores en Vercel relacionados con Prisma, revisa que `PRISMA_DATABASE_URL` exista en las variables de entorno del proyecto y que el log muestre `prisma generate` completando con éxito.
 pnpm install
 ```
 
 2) Variables de entorno (.env)
 Como los archivos `.env` y `.env.example` suelen estar ignorados por Git, crea manualmente un archivo `.env` en la raíz del proyecto con el siguiente contenido mínimo:
+## Producción (resumen)
+1. Configura `PRISMA_DATABASE_URL` (y/o `POSTGRES_URL`) en las variables de entorno de la plataforma de despliegue (por ejemplo, Vercel).
+2. Ejecuta migraciones en el entorno de despliegue: `npx prisma migrate deploy`.
+3. Asegúrate de que el `pnpm-lock.yaml` generado con pnpm v10 esté presente en la rama que Vercel deploya (Vercel respeta el lockfile). Luego `pnpm build` (el flujo de build ejecuta `prisma generate` antes de `next build`).
+
+Consejos para Vercel:
+- Confirma que en la configuración del proyecto en Vercel tienes añadida la variable `PRISMA_DATABASE_URL` en los entornos adecuados (Production / Preview).
+- Si Vercel falla con `ERR_PNPM_OUTDATED_LOCKFILE`, regenera el lockfile con pnpm v10 localmente y commitealo.
+- Recomendación: evita importar `@prisma/client` a nivel de módulo en rutas del App Router. Este proyecto usa una función `getPrisma()` en `lib/db.ts` que hace import dinámico y previene bundling/errores en build time.
 
 ```env
-# Conexión a MySQL para Prisma
 DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/DATABASE"
+## Solución de problemas (FAQ)
+- "Cannot find module '@prisma/client'" o "Cannot find module '.prisma/client/default'":
+  - Asegúrate de que `prisma generate` se ejecute durante la instalación en el entorno de despliegue. Este repo incluye `postinstall: prisma generate` y `build: prisma generate && next build`.
+  - Revisa los logs de build en Vercel y comprueba que `prisma generate` concluya sin errores.
+  - Si Vercel indica errores de lockfile (`ERR_PNPM_OUTDATED_LOCKFILE`), regenera `pnpm-lock.yaml` con pnpm v10 y súbelo.
+
+- Si sigues viendo errores de tiempo de ejecución relacionados con Prisma, pega aquí las primeras 30 líneas del stack trace y las reviso.
 ```
 
 Ejemplos locales de `DATABASE_URL`:

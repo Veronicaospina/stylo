@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { prisma } from "@/lib/db"
+import { getPrisma } from "@/lib/db"
 
 function getUserId(req: Request) {
   return req.headers.get("x-user-id")
@@ -9,7 +9,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   try {
     const userId = getUserId(req)
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    const outfit = await prisma.outfit.findFirst({
+  const prisma = await getPrisma()
+  const outfit = await prisma.outfit.findFirst({
       where: { id: params.id, userId },
       include: { items: { include: { item: true } } },
     })
@@ -26,12 +27,13 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
     const userId = getUserId(req)
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     // Ensure the outfit belongs to the user
-    const existing = await prisma.outfit.findFirst({ where: { id: params.id, userId }, select: { id: true } })
+  const prisma = await getPrisma()
+  const existing = await prisma.outfit.findFirst({ where: { id: params.id, userId }, select: { id: true } })
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
     // Remove junction rows before deleting outfit to avoid FK constraint issues
-    await prisma.outfitItem.deleteMany({ where: { outfitId: params.id } })
-    await prisma.outfit.delete({ where: { id: params.id } })
+  await prisma.outfitItem.deleteMany({ where: { outfitId: params.id } })
+  await prisma.outfit.delete({ where: { id: params.id } })
     return NextResponse.json({ ok: true })
   } catch (e) {
     console.error(e)

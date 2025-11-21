@@ -170,13 +170,20 @@ export default function AddItemPage() {
               <Label htmlFor="style" className="text-base font-medium">
                 Item style:
               </Label>
-              <Input
-                id="style"
-                value={style}
-                onChange={(e) => setStyle(e.target.value)}
-                className="mt-2"
-                placeholder="Enter style"
-              />
+              <Select value={style} onValueChange={setStyle}>
+                <SelectTrigger id="style" className="mt-2">
+                  <SelectValue placeholder="Select a style" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="casual">Casual</SelectItem>
+                  <SelectItem value="formal">Formal</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                  <SelectItem value="sporty">Sporty</SelectItem>
+                  <SelectItem value="elegant">Elegant</SelectItem>
+                  <SelectItem value="bohemian">Bohemian</SelectItem>
+                  <SelectItem value="minimalist">Minimalist</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

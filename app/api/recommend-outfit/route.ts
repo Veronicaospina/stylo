@@ -1,66 +1,134 @@
-import { generateText } from "ai"
 import { NextResponse } from "next/server"
-import type { ClothingItem } from "@/lib/types"
 
 export async function POST(request: Request) {
   try {
-    const { items, occasion, style } = await request.json()
+    const { occasion, style } = await request.json()
 
-    if (!items || items.length === 0) {
-      return NextResponse.json({ error: "No clothing items provided" }, { status: 400 })
+    if (!occasion || !style) {
+      return NextResponse.json({ error: "Missing required fields: occasion and style" }, { status: 400 })
     }
 
-    // Create a description of available items
-    const itemsDescription = items
-      .map((item: ClothingItem) => `${item.category}: ${item.name} (${item.color}, ${item.style})`)
-      .join("\n")
+    const prompt = `You are a professional fashion stylist. Provide a single, readable recommendation for an outfit based ONLY on the following information. Do NOT refer to any specific wardrobe items — give a general outfit recommendation that someone can follow.
 
-    const prompt = `You are a professional fashion stylist. Based on the following wardrobe items, recommend a complete outfit${occasion ? ` for ${occasion}` : ""}${style ? ` in a ${style} style` : ""}.
+Occasion: ${occasion}
+Preferred style: ${style}
 
-Available items:
-${itemsDescription}
+Include: 1) a short description of the outfit to wear (pieces and colors), 2) a brief explanation why it works, and 3) 2 concise styling tips. Keep the response as plain text; do not return JSON.`
 
-Please recommend:
-1. Which specific items to combine (use the exact names from the list)
-2. Why these items work well together
-3. Styling tips for this outfit
+    const API_KEY = process.env.GEMINI_API_KEY
+    const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash"
 
-Format your response as JSON with this structure:
-{
-  "recommendedItems": ["item name 1", "item name 2", ...],
-  "reasoning": "explanation of why these items work together",
-  "stylingTips": "tips for wearing this outfit"
-}`
+    if (!API_KEY) {
+      console.error("Missing GEMINI_API_KEY environment variable")
+      return NextResponse.json({ error: "Server misconfiguration: missing API key" }, { status: 500 })
+    }
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
-      prompt,
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`
+
+    const payload = {
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt,
+            },
+          ],
+        },
+      ],
+      generationConfig: {
+        temperature: 1.0,
+        // Increase token budget to reduce truncation; adjust as needed
+        maxOutputTokens: 1024,
+        // Disable 'thinking' for 2.5 models to reduce extra hidden token usage
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
+        // Request plain text response
+        responseMimeType: "text/plain",
+      },
+    }
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": API_KEY,
+      },
+      body: JSON.stringify(payload),
     })
 
-    // Parse the AI response
-    let recommendation
-    try {
-      // Try to extract JSON from the response
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
-      if (jsonMatch) {
-        recommendation = JSON.parse(jsonMatch[0])
-      } else {
-        // Fallback if no JSON found
-        recommendation = {
-          recommendedItems: [],
-          reasoning: text,
-          stylingTips: "Mix and match items to create your perfect look!",
-        }
-      }
-    } catch (parseError) {
-      recommendation = {
-        recommendedItems: [],
-        reasoning: text,
-        stylingTips: "Experiment with different combinations!",
-      }
+    if (!res.ok) {
+      const text = await res.text()
+      console.error("Gemini API error:", res.status, text)
+      return NextResponse.json({ error: "Failed to generate recommendation" }, { status: 502 })
     }
 
-    return NextResponse.json(recommendation)
+    const data = await res.json()
+
+    const candidate = data?.candidates?.[0]
+
+    // Try several extraction strategies for the text returned by Gemini
+    let recommendationText = ""
+
+    try {
+      // common shape: candidate.content.parts[0].text
+      recommendationText =
+        String(candidate?.content?.parts?.map((p: any) => p.text).join("\n") || "").trim()
+
+      // alternative: content is an array of content objects
+      if (!recommendationText && Array.isArray(candidate?.content)) {
+        recommendationText = candidate.content
+          .map((c: any) => (Array.isArray(c.parts) ? c.parts.map((p: any) => p.text).join("\n") : ""))
+          .join("\n")
+        recommendationText = String(recommendationText || "").trim()
+      }
+
+      // fallback: candidate.text (some SDKs expose it)
+      if (!recommendationText && candidate?.text) {
+        recommendationText = String(candidate.text).trim()
+      }
+
+      // deep search: walk nested objects to find any 'text' properties inside parts
+      if (!recommendationText && candidate?.content && typeof candidate.content === "object") {
+        const partsTexts: string[] = []
+        const visit = (obj: any) => {
+          if (!obj || typeof obj !== "object") return
+          if (Array.isArray(obj)) {
+            obj.forEach(visit)
+            return
+          }
+          if (Array.isArray(obj.parts)) {
+            obj.parts.forEach((p: any) => p?.text && partsTexts.push(p.text))
+          }
+          Object.values(obj).forEach(visit)
+        }
+        visit(candidate.content)
+        recommendationText = partsTexts.join("\n").trim()
+      }
+    } catch (e) {
+      console.error("Error extracting text from Gemini response", e)
+    }
+
+    // If still empty, compose a helpful message (include finishReason if model truncated)
+    if (!recommendationText) {
+      const finishReason = candidate?.finishReason || data?.finishReason || data?.candidates?.[0]?.finishReason
+      let msg = "The model returned no text in the expected fields."
+      if (finishReason) {
+        msg += ` Finish reason: ${finishReason}.`
+        if (finishReason === "MAX_TOKENS") {
+          msg += " The response was truncated (MAX_TOKENS). Try increasing maxOutputTokens or shorten the prompt."
+        }
+      }
+
+      // expose debug info in development to help troubleshooting
+      if (process.env.NODE_ENV !== "production") {
+        return NextResponse.json({ recommendation: msg, debug: data })
+      }
+
+      return NextResponse.json({ recommendation: msg })
+    }
+
+    return NextResponse.json({ recommendation: String(recommendationText) })
   } catch (error) {
     console.error("Error generating outfit recommendation:", error)
     return NextResponse.json({ error: "Failed to generate recommendation" }, { status: 500 })

@@ -72,6 +72,23 @@ POSTGRES_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
 PRISMA_DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
 ```
 
+### Variables para Gemini (IA)
+Si quieres usar la integración con la API de Gemini (Google Generative Language) para generar recomendaciones desde `/api/recommend-outfit`, añade estas variables en tu fichero de entorno localgit :
+
+```env
+# API key para la API REST de Generative Language (Gemini)
+GEMINI_API_KEY=tu_api_key_aqui
+
+# Modelo a utilizar (opcional). Por defecto se usa `gemini-2.5-flash`.
+# Puedes cambiar a otro modelo disponible según tu cuenta y cuotas.
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Notas importantes:
+- No uses el prefijo `NEXT_PUBLIC_` para la clave (`GEMINI_API_KEY`) — debe permanecer en el servidor y no exponerse al cliente.
+- Después de crear o cambiar `.env.local` reinicia el servidor de desarrollo (`pnpm dev`) para que Next.js recargue las variables.
+- Si el modelo devuelve respuestas truncadas, ajusta `maxOutputTokens` en la petición (o usa un prompt más conciso). El handler del proyecto ya intenta manejar truncamientos y devolver debug en desarrollo.
+
 Notas:
 - En Vercel debes añadir `PRISMA_DATABASE_URL` (y `POSTGRES_URL` si la necesitas) en las Environment Variables del proyecto.
 - `PRISMA_DATABASE_URL` es la variable que utiliza `prisma` en `prisma/schema.prisma`.
